@@ -1,5 +1,4 @@
 # Chess
- 
-So far none of the chess rules have been implemented,
-all you can do is drag and drop pieces.
 
+You can drag and drop pieces with the mouse.
+I still need to add: check, checkmate, stalemate, castling, en passant and pawn promotion.
