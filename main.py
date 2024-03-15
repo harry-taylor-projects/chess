@@ -3,38 +3,33 @@ import pygame
 import math
 
 
-def move(temp_board, move_turn, move_from, move_to):
+def move(temp_board, move_from, move_to):
 
     # manipulate a copy of the board
     move_board = deepcopy(temp_board)
     piece = move_board[move_from[0]][move_from[1]]
+    destination_piece = move_board[move_to[0]][move_to[1]]
+
+    # moves piece to its destination
+    move_board[move_from[0]][move_from[1]] = "empty"
+    move_board[move_to[0]][move_to[1]] = piece
 
     # moving for en passant and pawn promotion
     if "pawn" in piece:
-        if move_to[1] != move_from[1] and move_board[move_to[0]][move_to[1]] == "empty":
+        if move_to[1] != move_from[1] and destination_piece == "empty":
             move_board[move_from[0]][move_to[1]] = "empty"
-        if move_turn == "white" and move_to[0] == 0:
+        if move_to[0] == 0:
             move_board[move_to[0]][move_to[1]] = "white queen"
-        elif move_turn == "black" and move_to[0] == 7:
+        elif move_to[0] == 7:
             move_board[move_to[0]][move_to[1]] = "black queen"
-        else:
-            move_board[move_to[0]][move_to[1]] = piece
 
     # moving for castling
     elif "king" in piece:
-        if move_from == [0, 4] and move_to == [0, 2]:
-            move_board[0][0], move_board[0][2], move_board[0][3] = "empty", "black king", "black rook"
-        elif move_from == [0, 4] and move_to == [0, 6]:
-            move_board[0][5], move_board[0][6], move_board[0][7] = "black rook", "black king", "empty"
-        elif move_from == [7, 4] and move_to == [7, 2]:
-            move_board[7][0], move_board[7][2], move_board[7][3] = "empty", "white king", "white rook"
-        elif move_from == [7, 4] and move_to == [7, 6]:
-            move_board[7][5], move_board[7][6], move_board[7][7] = "white rook", "white king", "empty"
-        else:
-            move_board[move_to[0]][move_to[1]] = piece
-    else:
-        move_board[move_to[0]][move_to[1]] = piece
-    move_board[move_from[0]][move_from[1]] = "empty"
+        for edge, side in zip([0, 7], ["black", "white"]):
+            for empty, king, rook in zip([0, 7], [2, 6], [3, 5]):
+                if move_from == [edge, 4] and move_to == [edge, king]:
+                    move_board[edge][empty], move_board[edge][rook] = "empty", side + " rook"
+
     return move_board
 
 
@@ -171,14 +166,14 @@ def legal(legal_board, legal_turn, legal_from, legal_to, legal_castle, legal_en_
                 if turn == castle_turn and legal_from == [back_row, 4]:
                     if ((legal_to != [back_row, 2] or not legal_castle[i] or legal_board[back_row][1] != "empty"
                          or legal_board[back_row][2] != "empty" or legal_board[back_row][3] != "empty"
-                            or check(move(board_copy, legal_turn, [back_row, 4], [back_row, 3]), legal_turn))
+                            or check(move(board_copy, [back_row, 4], [back_row, 3]), legal_turn))
                             and (legal_to != [back_row, 6] or not legal_castle[i + 1] or
                                  legal_board[back_row][6] != "empty" or legal_board[back_row][5] != "empty"
-                                 or check(move(board_copy, legal_turn, [back_row, 4], [back_row, 5]), legal_turn))):
+                                 or check(move(board_copy, [back_row, 4], [back_row, 5]), legal_turn))):
                         return False
 
     board_copy = deepcopy(legal_board)
-    in_check = check(move(board_copy, legal_turn, legal_from, legal_to), legal_turn)
+    in_check = check(move(board_copy, legal_from, legal_to), legal_turn)
     return False if in_check else True
 
 
@@ -249,7 +244,7 @@ while run:
 
                 # if the move is legal the move is made
                 if legal(board, turn, location, destination, castle, en_passant):
-                    board = move(board, turn, location, destination)
+                    board = move(board, location, destination)
 
                     # update en passant
                     en_passant = location[1] if abs(destination[0] - location[0]) == 2 else None
